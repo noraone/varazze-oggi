@@ -11,27 +11,36 @@ SOURCES = [
     ("Genova24", "https://www.genova24.it/feed/", True),
     ("SavonaNews", "https://www.savonanews.it/rss.xml", True),
     ("Google News", "https://news.google.com/rss/search?q=Varazze+when:7d&hl=it&gl=IT&ceid=IT:it", False),
+    ("Google News", "https://news.google.com/rss/search?q=Varazze+(incidente+OR+carabinieri+OR+polizia+OR+soccorso+OR+furto+OR+arrestato+OR+incendio+OR+ferito+OR+morto+OR+%22vigili+del+fuoco%22)+when:7d&hl=it&gl=IT&ceid=IT:it", False),
 ]
 KEYWORDS = ["varazz", "alpicella", "castagnabuona", "invrea", "casanova di varazze", "pero di varazze"]
 GIORNI_DA_TENERE = 3
 MAX_NOTIZIE = 250
 
+# parole chiave per categoria: si cercano come inizio di parola (\b), "$" = parola intera
 CATEGORIE = [
-    ("Cronaca", ["incidente", "arrest", "carabinier", "polizia", "soccors", "furto", "rapina", "ferit", "morto", "morta",
-                 "muore", "scompars", "incendio", "denunc", "guardia costiera", "maltempo", "allerta", "tromba",
-                 "frana", "schianto", "investit", "truffa", "sequestr", "vigili del fuoco", "pompieri", "malore",
-                 "annegat", "aggression", "droga", "lutto", "piange"]),
-    ("Sport", ["calcio", "serie d", "eccellenza", "promozione", "partita", "campionato", "basket", "pallavolo",
-               "volley", "regata", "nuoto", "allenatore", "gol", "torneo", "celle varazze", "ciclis", "maratona",
-               "classifica", "pallanuoto", "tennis", "rugby", "atleti"]),
-    ("Politica", ["sindaco", "consiglio comunale", "giunta", "assessor", "consiglier", "elezion", "opposizione",
-                  "minoranza", "interrogazione", "partito", " pd", "lega", "fratelli d'italia", "centrodestra",
-                  "centrosinistra"]),
-    ("Eventi", ["festa", "sagra", "concerto", "mostra", "evento", "spettacolo", "festival", "manifestazione",
-                "rassegna", "teatro", "cerimonia", "intitolazion", "fiera", "presentazione", "appuntament", "musica"]),
-    ("Ambiente", ["rifiuti", "spiagg", "beigua", "parco", "ambiente", "alberi", "fung", "pulizia", "inquinament",
-                  "depurat", "animal", "tartarug", "cinghial", "sentier", "mare "]),
+    ("Cronaca", ["incident", "arrest", "carabinier", "polizia", "soccors", "furt", "rapin", "ferit", "mort", "muor",
+                 "scompars", "incendi", "denunc", "guardia costiera", "maltempo", "allerta", "tromba d", "tromba marina",
+                 "frana", "schiant", "investit", "truff", "sequestr", "vigili del fuoco", "pompier", "malore",
+                 "annegat", "aggredit", "aggression", "droga", "spaccio", "lutto", "piange", "tragedia", "118$",
+                 "elisoccorso", "evacuat", "crollo", "ladri", "vandal", "rissa", "coltell", "indagin"]),
+    ("Sport", ["calcio", "serie d$", "eccellenza", "prima categoria", "seconda categoria", "partita", "campionat",
+               "basket", "pallavolo", "volley", "regata", "nuoto", "allenator", "gol$", "torneo", "celle varazze",
+               "ciclis", "maratona", "classifica", "pallanuoto", "tennis", "rugby", "atlet", "arbitr", "derby"]),
+    ("Politica", ["sindac", "consiglio comunale", "giunta", "assessor", "consiglier", "elezion", "opposizion",
+                  "minoranza", "interrogazion", "partito", "pd$", "lega$", "fratelli d'italia", "centrodestra",
+                  "centrosinistra", "regione liguria", "bilancio comunale"]),
+    ("Eventi", ["festa", "sagra", "concert", "mostra", "evento", "spettacol", "festival", "manifestazion",
+                "rassegna", "teatro", "cerimonia", "intitolat", "intitolazion", "fiera", "presentazion",
+                "appuntament", "musica", "mercato", "mercatin", "gallery", "fotografic"]),
+    ("Ambiente", ["rifiuti", "spiagg", "beigua", "parco", "ambient", "alberi", "fung", "pulizia", "inquinament",
+                  "depurat", "animal", "tartarug", "cinghial", "sentier", "mare$", "fauna", "flora"]),
 ]
+_CAT_RE = [(n, re.compile("|".join(r"\b" + (re.escape(p[:-1]) + r"\b" if p.endswith("$") else re.escape(p))
+                                   for p in parole), re.I)) for n, parole in CATEGORIE]
+# pagine da scartare (schede e tabellini sportivi, live score)
+ESCLUDI = re.compile(r"scheda (giocatore|squadra)|tabellino|punteggio live|\blive score", re.I)
+FONTI_ESCLUSE = {"Futbol24", "Tuttocampo"}
 
 
 def fetch(url):
@@ -46,12 +55,17 @@ def clean(text):
     return re.sub(r"\s+", " ", text).strip()
 
 
-def categoria(testo):
-    t = " " + testo.lower() + " "
-    for nome, parole in CATEGORIE:
-        if any(p in t for p in parole):
-            return nome
+def categoria(titolo, desc=""):
+    # prima il titolo; la descrizione solo se il titolo non basta
+    for testo in (titolo, titolo + " " + desc):
+        for nome, rx in _CAT_RE:
+            if rx.search(testo):
+                return nome
     return "Attualità"
+
+
+def da_scartare(n):
+    return n["source"] in FONTI_ESCLUSE or bool(ESCLUDI.search(n["title"]))
 
 
 def chiave(titolo):
@@ -85,7 +99,7 @@ def leggi_feed(nome, url, filtra):
             desc = desc[:277].rsplit(" ", 1)[0] + "…"
         out.append({
             "title": titolo, "summary": desc, "url": link, "source": fonte,
-            "category": categoria(titolo + " " + desc), "published": quando.isoformat(),
+            "category": categoria(titolo, desc), "published": quando.isoformat(),
         })
     return out
 
@@ -113,7 +127,10 @@ def main():
                 nuove += 1
 
     limite = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=GIORNI_DA_TENERE)
-    tutte = [n for n in per_chiave.values() if dt.datetime.fromisoformat(n["published"]) >= limite]
+    tutte = [n for n in per_chiave.values()
+             if dt.datetime.fromisoformat(n["published"]) >= limite and not da_scartare(n)]
+    for n in tutte:  # ricalcola la categoria anche per le notizie già salvate
+        n["category"] = categoria(n["title"], n.get("summary", ""))
     tutte.sort(key=lambda n: n["published"], reverse=True)
     tutte = tutte[:MAX_NOTIZIE]
 
