@@ -75,7 +75,7 @@ footer{margin-top:28px;font-size:13px;color:var(--muted)}
   </header>
   <nav class="filters" id="filters" aria-label="Filtra per categoria"></nav>
   <main id="feed"></main>
-  <footer>Notizie degli ultimi 3 giorni, cercate in automatico ogni ora dalle 6 alle 23 su IVG, Genova24, SavonaNews e Google News. La pagina si aggiorna da sola; con “Cerca nuove notizie” fai subito una ricerca. Tocca “Leggi l’articolo” per aprire la fonte originale.</footer>
+  <footer>Le 30 notizie più recenti, cercate in automatico ogni ora dalle 6 alle 23 su IVG, Genova24, SavonaNews e Google News. La pagina si aggiorna da sola; con “Cerca nuove notizie” fai subito una ricerca. Tocca “Leggi l’articolo” per aprire la fonte originale.</footer>
 </div>
 <script>
 (function(){
@@ -85,7 +85,7 @@ footer{margin-top:28px;font-size:13px;color:var(--muted)}
   const $f=document.getElementById("filters"), $feed=document.getElementById("feed"), $s=document.getElementById("status");
 
   const $btn=document.getElementById("searchBtn"), $msg=document.getElementById("searchMsg");
-  const GIORNI=3;
+  const MAX_NOTIZIE=30;
   try{ const l=JSON.parse(localStorage.getItem("vz-live")||"{}"); live=l.items||[]; liveAt=l.at||0; }catch(e){}
 
   // ricerca immediata dal telefono: legge gli stessi feed tramite rss2json.com
@@ -114,10 +114,10 @@ footer{margin-top:28px;font-size:13px;color:var(--muted)}
   const pulisci=h=>(new DOMParser().parseFromString(h||"","text/html").body.textContent||"").replace(/\s+/g," ").trim();
   function categoria(titolo,desc){ for(const t of [titolo,titolo+" "+(desc||"")]){ for(const [n,rx] of CAT_RE){ if(rx.test(t)) return n; } } return "Attualità"; }
   function unisci(){
-    const lim=Date.now()-GIORNI*864e5, seen=new Set(), out=[];
-    for(const n of saved.concat(live)){ const k=chiave(n.title), t=Date.parse(n.published); if(!k||seen.has(k)||!(t>=lim)||scarta(n)) continue; seen.add(k); out.push(Object.assign({},n,{category:categoria(n.title,n.summary)})); }
+    const seen=new Set(), out=[];
+    for(const n of saved.concat(live)){ const k=chiave(n.title), t=Date.parse(n.published); if(!k||seen.has(k)||isNaN(t)||scarta(n)) continue; seen.add(k); out.push(Object.assign({},n,{category:categoria(n.title,n.summary)})); }
     out.sort((a,b)=>Date.parse(b.published)-Date.parse(a.published));
-    items=out;
+    items=out.slice(0,MAX_NOTIZIE);
     const last=Math.max(savedAt,liveAt);
     if(last) $s.textContent="Ultima ricerca notizie: "+new Date(last).toLocaleString("it-IT",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+" · "+items.length+" notizie";
   }
@@ -146,7 +146,8 @@ footer{margin-top:28px;font-size:13px;color:var(--muted)}
     live=live.concat(trovate); liveAt=Date.now();
     unisci(); render();
     const nuove=items.filter(n=>!prima.has(chiave(n.title))).length;
-    live=live.filter(n=>Date.parse(n.published)>=Date.now()-GIORNI*864e5).slice(-300);
+    const tenute=new Set(items.map(n=>chiave(n.title)));
+    live=live.filter(n=>tenute.has(chiave(n.title)));
     try{ localStorage.setItem("vz-live",JSON.stringify({at:liveAt,items:live})); }catch(e){}
     $msg.textContent=nuove? (nuove===1?"1 notizia nuova":nuove+" notizie nuove") : "Nessuna notizia nuova";
   }
