@@ -40,7 +40,9 @@ header{padding-block:24px 14px;border-bottom:2px solid var(--sea)}
 h1{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:44px;line-height:1;margin:6px 0 8px;color:var(--sea)}
 .status{font-size:14px;color:var(--muted)}
 .refresh{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-top:12px}
-.gh{font-size:14px;color:var(--sea);font-weight:600}
+#searchBtn{font:700 15px/1 "Source Sans 3",system-ui,sans-serif;background:var(--sea);color:var(--bg);border:0;border-radius:8px;padding:11px 16px;cursor:pointer}
+#searchBtn:disabled{opacity:.6}
+.refresh-msg{font-size:14px;color:var(--muted)}
 .filters{display:flex;flex-wrap:wrap;gap:8px;padding-block:14px}
 .filters button{font:600 14px/1 "Source Sans 3",system-ui,sans-serif;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 12px;border-radius:999px;cursor:pointer}
 .filters button[aria-pressed="true"]{background:var(--sea);border-color:var(--sea);color:var(--bg)}
@@ -67,24 +69,82 @@ footer{margin-top:28px;font-size:13px;color:var(--muted)}
     <h1>Varazze Oggi</h1>
     <div class="status" id="status">Caricamento notizie…</div>
     <div class="refresh">
-      <a class="gh" id="ghLink" href="#" target="_blank" rel="noopener" hidden>Cerca subito nuove notizie (GitHub)</a>
+      <button type="button" id="searchBtn">Cerca nuove notizie</button>
+      <span class="refresh-msg" id="searchMsg" aria-live="polite"></span>
     </div>
   </header>
   <nav class="filters" id="filters" aria-label="Filtra per categoria"></nav>
   <main id="feed"></main>
-  <footer>Notizie degli ultimi 3 giorni, cercate in automatico ogni ora dalle 6 alle 23 su IVG, Genova24, SavonaNews e Google News. La pagina si aggiorna da sola. Tocca “Leggi l’articolo” per aprire la fonte originale.</footer>
+  <footer>Notizie degli ultimi 3 giorni, cercate in automatico ogni ora dalle 6 alle 23 su IVG, Genova24, SavonaNews e Google News. La pagina si aggiorna da sola; con “Cerca nuove notizie” fai subito una ricerca. Tocca “Leggi l’articolo” per aprire la fonte originale.</footer>
 </div>
 <script>
 (function(){
   const CATS=["Tutte","Cronaca","Attualità","Politica","Eventi","Sport","Ambiente"];
-  let items=[], cat="Tutte";
+  let items=[], saved=[], savedAt=0, live=[], liveAt=0, cat="Tutte";
   try{ cat=localStorage.getItem("vz-cat")||"Tutte"; }catch(e){}
   const $f=document.getElementById("filters"), $feed=document.getElementById("feed"), $s=document.getElementById("status");
 
-  // link diretto al workflow su GitHub (utente.github.io/repo -> github.com/utente/repo)
-  const m=location.hostname.match(/^([^.]+)\.github\.io$/);
-  if(m){ const repo=location.pathname.split("/").filter(Boolean)[0]||(m[1]+".github.io");
-    const a=document.getElementById("ghLink"); a.href="https://github.com/"+m[1]+"/"+repo+"/actions/workflows/aggiorna.yml"; a.hidden=false; }
+  const $btn=document.getElementById("searchBtn"), $msg=document.getElementById("searchMsg");
+  const GIORNI=3;
+  try{ const l=JSON.parse(localStorage.getItem("vz-live")||"{}"); live=l.items||[]; liveAt=l.at||0; }catch(e){}
+
+  // ricerca immediata dal telefono: legge gli stessi feed tramite rss2json.com
+  const API="https://api.rss2json.com/v1/api.json?rss_url=";
+  const FEEDS=[
+    ["IVG","https://www.ivg.it/notizie-di-citta/varazze/feed/",false],
+    ["IVG","https://www.ivg.it/feed/",true],
+    ["Genova24","https://www.genova24.it/feed/",true],
+    ["SavonaNews","https://www.savonanews.it/rss.xml",true],
+    ["Google News","https://news.google.com/rss/search?q=Varazze+when:3d&hl=it&gl=IT&ceid=IT:it",false]
+  ];
+  const KW=["varazz","alpicella","castagnabuona","invrea","casanova di varazze","pero di varazze"];
+  const CATW=[
+    ["Cronaca",["incidente","arrest","carabinier","polizia","soccors","furto","rapina","ferit","morto","morta","muore","scompars","incendio","denunc","guardia costiera","maltempo","allerta","tromba","frana","schianto","investit","truffa","sequestr","vigili del fuoco","pompieri","malore","annegat","aggression","droga","lutto","piange"]],
+    ["Sport",["calcio","serie d","eccellenza","promozione","partita","campionato","basket","pallavolo","volley","regata","nuoto","allenatore","gol","torneo","celle varazze","ciclis","maratona","classifica","pallanuoto","tennis","rugby","atleti"]],
+    ["Politica",["sindaco","consiglio comunale","giunta","assessor","consiglier","elezion","opposizione","minoranza","interrogazione","partito"," pd","lega","fratelli d'italia","centrodestra","centrosinistra"]],
+    ["Eventi",["festa","sagra","concerto","mostra","evento","spettacolo","festival","manifestazione","rassegna","teatro","cerimonia","intitolazion","fiera","presentazione","appuntament","musica"]],
+    ["Ambiente",["rifiuti","spiagg","beigua","parco","ambiente","alberi","fung","pulizia","inquinament","depurat","animal","tartarug","cinghial","sentier","mare "]]
+  ];
+  const chiave=t=>(t||"").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,70);
+  const pulisci=h=>(new DOMParser().parseFromString(h||"","text/html").body.textContent||"").replace(/\s+/g," ").trim();
+  function categoria(t){ t=" "+t.toLowerCase()+" "; for(const [n,w] of CATW){ if(w.some(p=>t.includes(p))) return n; } return "Attualità"; }
+  function unisci(){
+    const lim=Date.now()-GIORNI*864e5, seen=new Set(), out=[];
+    for(const n of saved.concat(live)){ const k=chiave(n.title), t=Date.parse(n.published); if(!k||seen.has(k)||!(t>=lim)) continue; seen.add(k); out.push(n); }
+    out.sort((a,b)=>Date.parse(b.published)-Date.parse(a.published));
+    items=out;
+    const last=Math.max(savedAt,liveAt);
+    if(last) $s.textContent="Ultima ricerca notizie: "+new Date(last).toLocaleString("it-IT",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+" · "+items.length+" notizie";
+  }
+  async function cerca(){
+    $btn.disabled=true; $btn.textContent="Ricerca in corso…"; $msg.textContent="";
+    const trovate=[]; let ok=0;
+    await Promise.all(FEEDS.map(async([nome,url,filtra])=>{
+      try{
+        const j=await (await fetch(API+encodeURIComponent(url),{cache:"no-store"})).json();
+        if(j.status!=="ok") return; ok++;
+        for(const it of j.items||[]){
+          let titolo=pulisci(it.title), fonte=nome, desc=pulisci(it.description);
+          if(nome==="Google News"){ const i=titolo.lastIndexOf(" - "); if(i>0){ fonte=titolo.slice(i+3); titolo=titolo.slice(0,i); } desc=""; }
+          if(!titolo||!/^https?:/.test(it.link||"")) continue;
+          if(filtra && !KW.some(k=>(titolo+" "+desc).toLowerCase().includes(k))) continue;
+          const t=Date.parse((it.pubDate||"").replace(" ","T")+"Z");
+          if(desc.length>280) desc=desc.slice(0,277).replace(/\s+\S*$/,"")+"…";
+          trovate.push({title:titolo,summary:desc,url:it.link,source:fonte,category:categoria(titolo+" "+desc),published:new Date(isNaN(t)?Date.now():t).toISOString()});
+        }
+      }catch(e){}
+    }));
+    $btn.disabled=false; $btn.textContent="Cerca nuove notizie";
+    if(!ok){ $msg.textContent="Ricerca non riuscita: controlla la connessione e riprova."; return; }
+    const prima=new Set(items.map(n=>chiave(n.title)));
+    live=live.concat(trovate); liveAt=Date.now();
+    unisci(); render();
+    const nuove=items.filter(n=>!prima.has(chiave(n.title))).length;
+    live=live.filter(n=>Date.parse(n.published)>=Date.now()-GIORNI*864e5).slice(-300);
+    try{ localStorage.setItem("vz-live",JSON.stringify({at:liveAt,items:live})); }catch(e){}
+    $msg.textContent=nuove? (nuove===1?"1 notizia nuova":nuove+" notizie nuove") : "Nessuna notizia nuova";
+  }
+  $btn.onclick=cerca;
 
   function drawFilters(){
     $f.textContent="";
@@ -133,8 +193,8 @@ footer{margin-top:28px;font-size:13px;color:var(--muted)}
       const r=await fetch("news.json?t="+Date.now(),{cache:"no-store"});
       if(!r.ok) throw new Error(r.status);
       const data=await r.json();
-      items=data.items||[];
-      $s.textContent="Ultima ricerca notizie: "+new Date(data.updated).toLocaleString("it-IT",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+" · "+items.length+" notizie";
+      saved=data.items||[]; savedAt=Date.parse(data.updated)||0;
+      unisci();
     }catch(e){
       if(!items.length) $s.textContent="Notizie non disponibili: controlla la connessione.";
     }
