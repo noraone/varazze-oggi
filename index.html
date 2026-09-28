@@ -118,6 +118,7 @@ footer{margin-top:28px;font-size:13px;color:var(--muted)}
   }
   async function cerca(){
     $btn.disabled=true; $btn.textContent="Ricerca in corso…"; $msg.textContent="";
+    if(loading) await loading;
     const trovate=[]; let ok=0;
     await Promise.all(FEEDS.map(async([nome,url,filtra])=>{
       try{
@@ -187,7 +188,9 @@ footer{margin-top:28px;font-size:13px;color:var(--muted)}
       sec.appendChild(ul); $feed.appendChild(sec);
     });
   }
-  async function load(){
+  let loading=null;
+  function load(){ return loading=caricamento().finally(()=>{ loading=null; }); }
+  async function caricamento(){
     if(!items.length) $s.textContent="Caricamento notizie…";
     try{
       const r=await fetch("news.json?t="+Date.now(),{cache:"no-store"});
