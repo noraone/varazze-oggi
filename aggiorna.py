@@ -14,8 +14,7 @@ SOURCES = [
     ("Google News", "https://news.google.com/rss/search?q=Varazze+(incidente+OR+carabinieri+OR+polizia+OR+soccorso+OR+furto+OR+arrestato+OR+incendio+OR+ferito+OR+morto+OR+%22vigili+del+fuoco%22)+when:7d&hl=it&gl=IT&ceid=IT:it", False),
 ]
 KEYWORDS = ["varazz", "alpicella", "castagnabuona", "invrea", "casanova di varazze", "pero di varazze"]
-GIORNI_DA_TENERE = 3
-MAX_NOTIZIE = 250
+MAX_NOTIZIE = 30  # si tengono sempre le 30 notizie più recenti
 
 # parole chiave per categoria: si cercano come inizio di parola (\b), "$" = parola intera
 CATEGORIE = [
@@ -126,9 +125,7 @@ def main():
                 per_chiave[k] = n
                 nuove += 1
 
-    limite = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=GIORNI_DA_TENERE)
-    tutte = [n for n in per_chiave.values()
-             if dt.datetime.fromisoformat(n["published"]) >= limite and not da_scartare(n)]
+    tutte = [n for n in per_chiave.values() if not da_scartare(n)]
     for n in tutte:  # ricalcola la categoria anche per le notizie già salvate
         n["category"] = categoria(n["title"], n.get("summary", ""))
     tutte.sort(key=lambda n: n["published"], reverse=True)
