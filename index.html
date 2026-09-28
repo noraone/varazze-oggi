@@ -95,22 +95,27 @@ footer{margin-top:28px;font-size:13px;color:var(--muted)}
     ["IVG","https://www.ivg.it/feed/",true],
     ["Genova24","https://www.genova24.it/feed/",true],
     ["SavonaNews","https://www.savonanews.it/rss.xml",true],
-    ["Google News","https://news.google.com/rss/search?q=Varazze+when:3d&hl=it&gl=IT&ceid=IT:it",false]
+    ["Google News","https://news.google.com/rss/search?q=Varazze+when:3d&hl=it&gl=IT&ceid=IT:it",false],
+    ["Google News","https://news.google.com/rss/search?q=Varazze+(incidente+OR+carabinieri+OR+polizia+OR+soccorso+OR+furto+OR+arrestato+OR+incendio+OR+ferito+OR+morto+OR+%22vigili+del+fuoco%22)+when:3d&hl=it&gl=IT&ceid=IT:it",false]
   ];
   const KW=["varazz","alpicella","castagnabuona","invrea","casanova di varazze","pero di varazze"];
   const CATW=[
-    ["Cronaca",["incidente","arrest","carabinier","polizia","soccors","furto","rapina","ferit","morto","morta","muore","scompars","incendio","denunc","guardia costiera","maltempo","allerta","tromba","frana","schianto","investit","truffa","sequestr","vigili del fuoco","pompieri","malore","annegat","aggression","droga","lutto","piange"]],
-    ["Sport",["calcio","serie d","eccellenza","promozione","partita","campionato","basket","pallavolo","volley","regata","nuoto","allenatore","gol","torneo","celle varazze","ciclis","maratona","classifica","pallanuoto","tennis","rugby","atleti"]],
-    ["Politica",["sindaco","consiglio comunale","giunta","assessor","consiglier","elezion","opposizione","minoranza","interrogazione","partito"," pd","lega","fratelli d'italia","centrodestra","centrosinistra"]],
-    ["Eventi",["festa","sagra","concerto","mostra","evento","spettacolo","festival","manifestazione","rassegna","teatro","cerimonia","intitolazion","fiera","presentazione","appuntament","musica"]],
-    ["Ambiente",["rifiuti","spiagg","beigua","parco","ambiente","alberi","fung","pulizia","inquinament","depurat","animal","tartarug","cinghial","sentier","mare "]]
+    ["Cronaca",["incident","arrest","carabinier","polizia","soccors","furt","rapin","ferit","mort","muor","scompars","incendi","denunc","guardia costiera","maltempo","allerta","tromba d","tromba marina","frana","schiant","investit","truff","sequestr","vigili del fuoco","pompier","malore","annegat","aggredit","aggression","droga","spaccio","lutto","piange","tragedia","118$","elisoccorso","evacuat","crollo","ladri","vandal","rissa","coltell","indagin"]],
+    ["Sport",["calcio","serie d$","eccellenza","prima categoria","seconda categoria","partita","campionat","basket","pallavolo","volley","regata","nuoto","allenator","gol$","torneo","celle varazze","ciclis","maratona","classifica","pallanuoto","tennis","rugby","atlet","arbitr","derby"]],
+    ["Politica",["sindac","consiglio comunale","giunta","assessor","consiglier","elezion","opposizion","minoranza","interrogazion","partito","pd$","lega$","fratelli d'italia","centrodestra","centrosinistra","regione liguria","bilancio comunale"]],
+    ["Eventi",["festa","sagra","concert","mostra","evento","spettacol","festival","manifestazion","rassegna","teatro","cerimonia","intitolat","intitolazion","fiera","presentazion","appuntament","musica","mercato","mercatin","gallery","fotografic"]],
+    ["Ambiente",["rifiuti","spiagg","beigua","parco","ambient","alberi","fung","pulizia","inquinament","depurat","animal","tartarug","cinghial","sentier","mare$","fauna","flora"]]
   ];
+  // inizio parola; "$" = parola intera (lettere accentate comprese)
+  const CAT_RE=CATW.map(([n,w])=>[n,new RegExp(w.map(p=>"(?<![\\p{L}\\d])"+(p.endsWith("$")?p.slice(0,-1).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"(?![\\p{L}\\d])":p.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"))).join("|"),"iu")]);
+  const ESCLUDI=/scheda (giocatore|squadra)|tabellino|punteggio live|\blive score/i, FONTI_ESCLUSE=["Futbol24","Tuttocampo"];
+  const scarta=n=>FONTI_ESCLUSE.includes(n.source)||ESCLUDI.test(n.title||"");
   const chiave=t=>(t||"").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,70);
   const pulisci=h=>(new DOMParser().parseFromString(h||"","text/html").body.textContent||"").replace(/\s+/g," ").trim();
-  function categoria(t){ t=" "+t.toLowerCase()+" "; for(const [n,w] of CATW){ if(w.some(p=>t.includes(p))) return n; } return "Attualità"; }
+  function categoria(titolo,desc){ for(const t of [titolo,titolo+" "+(desc||"")]){ for(const [n,rx] of CAT_RE){ if(rx.test(t)) return n; } } return "Attualità"; }
   function unisci(){
     const lim=Date.now()-GIORNI*864e5, seen=new Set(), out=[];
-    for(const n of saved.concat(live)){ const k=chiave(n.title), t=Date.parse(n.published); if(!k||seen.has(k)||!(t>=lim)) continue; seen.add(k); out.push(n); }
+    for(const n of saved.concat(live)){ const k=chiave(n.title), t=Date.parse(n.published); if(!k||seen.has(k)||!(t>=lim)||scarta(n)) continue; seen.add(k); out.push(Object.assign({},n,{category:categoria(n.title,n.summary)})); }
     out.sort((a,b)=>Date.parse(b.published)-Date.parse(a.published));
     items=out;
     const last=Math.max(savedAt,liveAt);
@@ -131,7 +136,7 @@ footer{margin-top:28px;font-size:13px;color:var(--muted)}
           if(filtra && !KW.some(k=>(titolo+" "+desc).toLowerCase().includes(k))) continue;
           const t=Date.parse((it.pubDate||"").replace(" ","T")+"Z");
           if(desc.length>280) desc=desc.slice(0,277).replace(/\s+\S*$/,"")+"…";
-          trovate.push({title:titolo,summary:desc,url:it.link,source:fonte,category:categoria(titolo+" "+desc),published:new Date(isNaN(t)?Date.now():t).toISOString()});
+          trovate.push({title:titolo,summary:desc,url:it.link,source:fonte,category:categoria(titolo,desc),published:new Date(isNaN(t)?Date.now():t).toISOString()});
         }
       }catch(e){}
     }));
