@@ -1,0 +1,9 @@
+{
+  "name": "Varazze Oggi",
+  "short_name": "Varazze Oggi",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#F2F5F7",
+  "theme_color": "#0F4C73",
+  "icons": [{ "src": "icon.png", "sizes": "180x180", "type": "image/png" }]
+}
