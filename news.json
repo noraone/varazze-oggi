@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-16T08:58:57.825622+00:00",
+ "updated": "2026-10-16T13:55:37.938051+00:00",
  "items": [
   {
    "title": "Sestri Levante, rivoluzione del traffico: Via del Soccorso cambia senso",
@@ -8,6 +8,14 @@
    "source": "Il Secolo XIX",
    "category": "Cronaca",
    "published": "2026-10-16T03:00:00+00:00"
+  },
+  {
+   "title": "Colpi Basetti: influenza, perché vaccinarsi?",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxOQWxJUEx6ZUVCQmw3MUF3SFI3UXBBMVBScm9xaEdEVi1Pa1FmTnlEZ3JJbHZsdTV6QTJabWp3U21yeTgtd3RHZTBsRE9BNEp1NTFFVEJabHZrY2k3aFE1SWlqSmxSLXozaDZseTRYSjlSM092ZUpoV05GcTdzLVo5TEVRbFBEY3VTQUpHckNmNi1LcGZDaGRJNnFNQQ?oc=5",
+   "source": "Il Secolo XIX",
+   "category": "Attualità",
+   "published": "2026-10-15T16:11:00+00:00"
   },
   {
    "title": "Varazze, auto si ribalta su un fianco lungo l'Aurelia: un uomo soccorso e trasportato in ospedale",
@@ -24,6 +32,14 @@
    "source": "IVG.it",
    "category": "Cronaca",
    "published": "2026-10-15T14:33:00+00:00"
+  },
+  {
+   "title": "Acque inquinate da Pfas: vietato bere dal rubinetto a Pietra, Borgio e Villanova, cosa sta succedendo",
+   "summary": "",
+   "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxONVBzb3BDNEVmZDktUW8xZk1maEl0eEo3VGdRSnJuZE9hQ3Z3RG9SM0FJN3d6WlFCLVNrd0pCdmRMX3c5aDlLMktrcFF4NGljUm9hM2lXRFppM1psUmVmd2tXUERMZ192aXY4MndQb1RWem9zZlFsMFdLRE4wcGktRzVzZDhJem5aUkRkMG9JRUdKVnBZYlVVQjIzbU1lQU1yUmg0?oc=5",
+   "source": "Il Secolo XIX",
+   "category": "Attualità",
+   "published": "2026-10-15T11:16:00+00:00"
   },
   {
    "title": "Incidente sul lavoro a Imperia, ferito un operaio della raccolta differenziata",
@@ -224,22 +240,6 @@
    "source": "Savona News",
    "category": "Attualità",
    "published": "2026-10-13T08:49:38+00:00"
-  },
-  {
-   "title": "Casa di comunità a Varazze, approvato all'unanimità ordine del giorno della minoranza",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMi_gFBVV95cUxQdkpHcllpTzBkOHlPU2FnekJTeDRtc3E4WFJ4TzNSZjZ5NjI1TTMxU3h1OXBfQUFoLXYwS3F1NDU2V29ucVhjTUZydWE5ZHVHbEw4SjZtREl5SG80ZmdhejVsZEZWTUN5OHZSbS1ma2t6bVo4UGI0NVRCU0NQaUJfVDQ5N0FRZ0JxV25VNS1RUkRQaWZtdFgydm9sekZ0OWNmRld0RTRnMUVGTDZRVFlBREJXUHV1OUpDTE5QSmdYZ1R1ZjFiTHcxQVVGVE00S21RWHlkLWhGaEp1NlEwR0swcVd5b3BuRXN4X1BNMktDMGNZUjFyMFdVRnBhd0dDQdIB8AFBVV95cUxPd25pcnBickI5TnJRdXJjU2pDb05DTjJBYjhTRi1PZktwYWF2MFpZZzY4ODFaeVZuYWFpWEktQUR2czRlWkhEOWRDYXRZRGFkdlh3TkFpUExubUdkdTJMYjVRTTJiMG0wV1UycHZfM05idUNhRDFDemc3QXpBQUJWOUY2Y2pnbXNfY3RDN0VPUTVTdmxySWNhWTJfTGY2LVQ3eU5VZXE0X2JMUDR0Z3RpRmxoQ3JPR0t5bS16VnlXZUdieHgxWVhPbTdRc1M4OEpNMXRtUFFEc05QV3BlSjdwXzV3eURMSi1WWVhTZnlQbXU?oc=5",
-   "source": "Savona News",
-   "category": "Politica",
-   "published": "2026-10-13T05:48:51+00:00"
-  },
-  {
-   "title": "Casa di Comunità del Levante Savonese. Robello (Varazze Domani): “Approvato all’unanimità il nostro ordine del giorno”",
-   "summary": "",
-   "url": "https://news.google.com/rss/articles/CBMi2wFBVV95cUxNUkhBQ2JMOVVObmRybV82QlNwa3RKYlFKOG0wdDZ0ODJKaVlnQ09qeG15X0xJQktTcEpEQVh1dUdsQXJldGg1MUkxM3pHZzZ4SXYtNFRkandTRmJyejNrcms2a3gxdUhTS3lzaFlUWDhSNURNVWcyallLVFdYN3lPa080ZG9mNmNKcnEwTGtOR1E1UHVXZUYwVGhPUHByeFhNZHNZMENjRmtzbXRXaWxyY1dhQ29xZnJOa0RHQ1c3V3g3Qi0xZlZIX3RVVEVhWldiZW1tenAzS0lfXzTSAdsBQVVfeXFMTVJIQUNiTDlVTm5kcm1fNkJTcGt0SmJRSjhtMHQ2dDgySmlZZ0NPanhteV9MSUJLU3BKREFYdXVHbEFyZXRoNTFJMTN6R2c2eEl2LTRUZGp3U0Zicnoza3JrNmt4MXVIU0t5c2hZVFg4UjVETVVnMmpZS1RXWDd5T2tPNGRvZjZjSnJxMExrTkdRNVB1V2VGMFRoT1BwcnhYTWRzWTBDY0Zrc210V2lscmNXYUNvcWZyTmtER0NXN1d4N0ItMWZWSF90VVRFYVpXYmVtbXpwM0tJX180?oc=5",
-   "source": "IVG.it",
-   "category": "Attualità",
-   "published": "2026-10-13T05:40:00+00:00"
   }
  ]
 }
